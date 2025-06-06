@@ -3,23 +3,22 @@
 Works with a chat model with tool calling support.
 """
 
+import os
 from datetime import UTC, datetime
 from typing import Dict, List, Literal, cast
 
-from langchain_core.messages import AIMessage
+import dotenv
+from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.graph import StateGraph
 from langgraph.prebuilt import ToolNode
+from mem0 import MemoryClient  # type: ignore[import-untyped]
 
 from react_agent.configuration import Configuration
 from react_agent.state import InputState, State
 from react_agent.tools import TOOLS
 from react_agent.utils import load_chat_model
 
-import os
-import dotenv
 dotenv.load_dotenv()
-from mem0 import MemoryClient
-from langchain_core.messages import HumanMessage
 
 # Initialize Mem0 client
 MEM0_API_KEY = os.getenv("MEM0_API_KEY")
@@ -63,9 +62,11 @@ async def call_model(state: State) -> Dict[str, List[AIMessage]]:
         user_query = last_user_msg.content if last_user_msg else ""
         # Search Mem0 for relevant memories
         import asyncio
-        memories = await asyncio.to_thread(mem0.search, user_query, user_id=MEM0_USER_ID, limit=5)
-        print(f"[Mem0] Search query: {user_query}")
-        print(f"[Mem0] Retrieved memories: {memories}")
+        memories = await asyncio.to_thread(
+            mem0.search, user_query, user_id=MEM0_USER_ID, limit=5
+        )
+        print(f"[Mem0] Search query: {user_query}")  # noqa: T201
+        print(f"[Mem0] Retrieved memories: {memories}")  # noqa: T201
         memory_context = "\n".join(f"- {m['memory']}" for m in memories) if memories else ""
         # Build context message
         if memory_context:
@@ -77,7 +78,7 @@ async def call_model(state: State) -> Dict[str, List[AIMessage]]:
         else:
             messages = [{"role": "system", "content": system_message}, *state.messages]
     except Exception as e:
-        print(f"[Mem0] Error during memory search: {e}")
+        print(f"[Mem0] Error during memory search: {e}")  # noqa: T201
         messages = [{"role": "system", "content": system_message}, *state.messages]
 
     # Get the model's response
@@ -113,11 +114,13 @@ async def call_model(state: State) -> Dict[str, List[AIMessage]]:
     import asyncio
     if to_save:
         try:
-            print(f"[Mem0] Saving to memory: {to_save}")
-            await asyncio.to_thread(mem0.add, to_save, user_id=MEM0_USER_ID, agent_id="react-agent")
-            print("[Mem0] Save successful.")
+            print(f"[Mem0] Saving to memory: {to_save}")  # noqa: T201
+            await asyncio.to_thread(
+                mem0.add, to_save, user_id=MEM0_USER_ID, agent_id="react-agent"
+            )
+            print("[Mem0] Save successful.")  # noqa: T201
         except Exception as e:
-            print(f"[Mem0] Error during memory save: {e}")
+            print(f"[Mem0] Error during memory save: {e}")  # noqa: T201
 
     # Return the model's response as a list to be added to existing messages
     return {"messages": [response]}
