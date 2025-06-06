@@ -1,4 +1,10 @@
+import os
+
 import pytest
+
+if not os.getenv("LANGCHAIN_API_KEY"):
+    pytest.skip("LANGCHAIN_API_KEY not set", allow_module_level=True)
+
 from langsmith import unit
 
 from react_agent import graph
